@@ -174,6 +174,30 @@ p {
   color: var(--muted);
   font-size: 12px;
 }
+.identity-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  color: var(--ink);
+  background: white;
+  border-radius: 8px;
+}
+.identity-form label {
+  color: var(--muted);
+}
+.identity-form button {
+  min-height: 42px;
+  color: white;
+  background: var(--green);
+  border: 0;
+  border-radius: 6px;
+  font-weight: 800;
+}
+.identity-form small {
+  color: var(--muted);
+  font-weight: 800;
+}
 .button {
   min-height: 48px;
   display: inline-flex;
@@ -491,8 +515,13 @@ select:focus {
   border-radius: 6px;
   font: 700 25px "Space Grotesk";
 }
+.score-center {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+}
 .versus {
-  margin: 12px 0;
+  margin: 0;
   color: #8e8e8e;
   text-align: center;
   font: 700 10px "Space Grotesk";
@@ -510,10 +539,9 @@ select:focus {
 }
 .game-timer {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   gap: 12px;
   align-items: center;
-  margin-bottom: 14px;
   padding: 16px;
   color: white;
   background: var(--green);
@@ -539,6 +567,7 @@ select:focus {
 }
 .timer-controls {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 .timer-controls button {
@@ -922,7 +951,7 @@ select:focus {
   }
   .scoreboard-card {
     display: grid;
-    grid-template-columns: 1fr 48px 1fr;
+    grid-template-columns: 1fr minmax(190px, .75fr) 1fr;
     align-items: stretch;
     gap: 12px;
     padding: 12px;
@@ -933,10 +962,14 @@ select:focus {
   .player-score strong {
     font-size: 82px;
   }
+  .score-center {
+    min-height: 188px;
+    align-content: stretch;
+  }
   .versus {
     display: grid;
     place-items: center;
-    margin: 0;
+    min-height: 30px;
   }
   .match-status,
   .game-timer,
@@ -944,14 +977,21 @@ select:focus {
     margin-bottom: 10px;
   }
   .game-timer {
-    grid-template-columns: 1fr 1fr;
-    padding: 12px;
+    min-height: 146px;
+    align-content: center;
+    text-align: center;
+    padding: 14px;
   }
   .game-timer strong {
-    font-size: 34px;
+    font-size: clamp(54px, 11vw, 92px);
+    letter-spacing: -.08em;
   }
   .timer-controls {
     grid-template-columns: 1fr 1fr;
+  }
+  .timer-controls button {
+    min-height: 42px;
+    font-size: 13px;
   }
   .score-toolbar {
     grid-template-columns: repeat(3, 1fr);

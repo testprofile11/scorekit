@@ -31,8 +31,16 @@
       <section id="dashboard" class="screen active">
         <div class="hero-card">
           <div class="eyebrow"><span></span> J1 Hoops Papawis Runs</div>
-          <h1>Track wins, losses, and live scores.</h1>
+          <h1>Welcome, <span id="welcome-player-name">Player</span>.</h1>
           <p>Choose whether you are hosting a group or joining one, then add games and track records on this device.</p>
+          <form id="player-identity-form" class="identity-form">
+            <label>
+              Your player name
+              <input id="current-player-input" autocomplete="off" placeholder="Enter your name">
+            </label>
+            <button type="submit">Save name</button>
+            <small id="current-player-code">Player#00000</small>
+          </form>
           <div class="group-pill">
             <span>Active group</span>
             <strong id="current-group-name">No group yet</strong>
@@ -68,8 +76,8 @@
           </button>
           <button class="mode-card" type="button" data-mode="joiner">
             <span>Joiner</span>
-            <strong>Join a group</strong>
-            <small>Add your name and play inside a group.</small>
+            <strong>Select a group</strong>
+            <small>Choose an existing group and play inside it.</small>
           </button>
         </div>
 
@@ -140,7 +148,19 @@
               <button type="button" data-side="a" data-delta="1">+</button>
             </div>
           </article>
-          <div class="versus">VS</div>
+          <div class="score-center">
+            <div class="versus">VS</div>
+            <div class="game-timer" id="game-timer" hidden>
+              <div>
+                <span>Basketball timer</span>
+                <strong id="timer-display">12:00</strong>
+              </div>
+              <div class="timer-controls">
+                <button id="timer-toggle" type="button">Start</button>
+                <button id="timer-reset" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
           <article class="player-score">
             <span id="score-name-b">Player B</span>
             <strong id="score-b">0</strong>
@@ -152,17 +172,6 @@
         </div>
 
         <div class="match-status" id="match-status">Target: 21 points</div>
-
-        <div class="game-timer" id="game-timer" hidden>
-          <div>
-            <span>Basketball timer</span>
-            <strong id="timer-display">12:00</strong>
-          </div>
-          <div class="timer-controls">
-            <button id="timer-toggle" type="button">Start</button>
-            <button id="timer-reset" type="button">Reset</button>
-          </div>
-        </div>
 
         <div class="live-tracker">
           <div class="tracker-heading">
@@ -207,6 +216,7 @@
           <h2>Lifetime win/loss tracker.</h2>
         </div>
         <p class="helper-copy">Add names and mark each person as an organizer, player, or both. All-time wins and losses are saved on this device across every sport.</p>
+        <p class="helper-copy" id="player-management-note">Only group hosts can add or change players in the active group.</p>
         <form id="add-player-form" class="inline-form">
           <input id="new-player-name" placeholder="Type a player name" autocomplete="off">
           <select id="new-player-role" aria-label="Role">
@@ -226,7 +236,7 @@
           <div class="eyebrow"><span></span> Host or joiner</div>
           <h2>Create or join a group.</h2>
         </div>
-        <p class="helper-copy">Choose Host if you run the group. Choose Joiner if you are joining a group and adding your player name.</p>
+        <p class="helper-copy">Choose Host if you run the group. Choose Joiner if you are selecting an existing group.</p>
         <div class="role-choice" id="role-choice">
           <button class="active" type="button" data-setup-role="host">I am a group host</button>
           <button type="button" data-setup-role="joiner">I am a joiner</button>
@@ -242,6 +252,7 @@
           </label>
           <button class="button primary full" id="group-submit-label" type="submit">Create group as host</button>
         </form>
+        <p class="helper-copy" id="joiner-group-note" hidden>As a joiner, select an existing group below. Group creation and player management are host-only.</p>
         <div id="groups-list" class="group-list"></div>
       </section>
 

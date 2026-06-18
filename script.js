@@ -7,6 +7,8 @@ const defaults = {
   groups: [],
   selectedGroupId: null,
   setupRole: "host",
+  currentPlayerCode: null,
+  currentPlayerName: "",
   nextPlayerNumber: 0,
   players: [],
   matches: []
@@ -35,6 +37,7 @@ function loadData() {
 function saveData() {
   state.data.selectedGroupId = state.selectedGroupId;
   state.data.setupRole = state.setupRole;
+  state.data.currentPlayerName = cleanName(state.data.currentPlayerName || "");
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
 }
 
@@ -44,6 +47,8 @@ function normalizeData(data) {
     normalized.groups = [];
   }
   normalized.nextPlayerNumber = Number.isInteger(normalized.nextPlayerNumber) ? normalized.nextPlayerNumber : 0;
+  if (!normalized.currentPlayerCode) normalized.currentPlayerCode = nextPlayerCode(normalized);
+  normalized.currentPlayerName = cleanName(normalized.currentPlayerName || "");
   normalized.groups = normalized.groups.map((group) => ({
     teams: [],
     ...group,
@@ -116,19 +121,20 @@ function roleLabel(roles) {
   return "Player";
 }
 
-function upsertPlayer(players, name, roles = ["player"], teamName = "", groupId = state.selectedGroupId) {
+function upsertPlayer(players, name, roles = ["player"], teamName = "", groupId = state.selectedGroupId, code = "") {
   const cleaned = cleanName(name);
   if (!cleaned) return null;
   const team = cleanName(teamName);
-  const existing = players.find((player) => player.name.toLowerCase() === cleaned.toLowerCase());
+  const existing = players.find((player) => (code && player.code === code) || player.name.toLowerCase() === cleaned.toLowerCase());
   if (existing) {
+    existing.name = cleaned;
     existing.roles = normalizeRoles([...existing.roles, ...roles]);
     existing.teams = normalizeTeams(existing.teams);
     if (!existing.code) existing.code = nextPlayerCode();
     if (team && groupId) existing.teams[groupId] = team;
     return existing;
   }
-  const player = { code: nextPlayerCode(), name: cleaned, roles: normalizeRoles(roles), teams: team && groupId ? { [groupId]: team } : {} };
+  const player = { code: code || nextPlayerCode(), name: cleaned, roles: normalizeRoles(roles), teams: team && groupId ? { [groupId]: team } : {} };
   players.push(player);
   return player;
 }
@@ -153,6 +159,16 @@ document.querySelectorAll("[data-mode]").forEach((button) => {
   });
 });
 
+document.querySelector("#player-identity-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = cleanName(document.querySelector("#current-player-input").value);
+  if (!name) return;
+  state.data.currentPlayerName = name;
+  upsertPlayer(state.data.players, name, ["player"], "", state.selectedGroupId, state.data.currentPlayerCode);
+  saveData();
+  render();
+});
+
 backButton.addEventListener("click", () => {
   if (state.history.length <= 1) return;
   state.history.pop();
@@ -160,8 +176,9 @@ backButton.addEventListener("click", () => {
 });
 
 document.querySelector("#reset-demo").addEventListener("click", () => {
-  state.data = structuredClone(defaults);
+  state.data = normalizeData(structuredClone(defaults));
   state.selectedGroupId = state.data.selectedGroupId;
+  state.setupRole = state.data.setupRole;
   saveData();
   render();
 });
@@ -184,8 +201,14 @@ document.querySelector("#match-form").addEventListener("submit", (event) => {
   const playerA = cleanName(document.querySelector("#player-a").value);
   const playerB = cleanName(document.querySelector("#player-b").value);
   if (!playerA || !playerB || playerA.toLowerCase() === playerB.toLowerCase()) return;
-  const playerARecord = addPlayer(playerA);
-  const playerBRecord = addPlayer(playerB);
+  let playerARecord = findPlayerByName(playerA);
+  let playerBRecord = findPlayerByName(playerB);
+  if (state.setupRole !== "host" && (!playerARecord || !playerBRecord)) {
+    window.alert("Only the group host can add new players. Please select existing player names.");
+    return;
+  }
+  playerARecord = playerARecord || addPlayer(playerA);
+  playerBRecord = playerBRecord || addPlayer(playerB);
   state.activeMatch = {
     groupId: state.selectedGroupId,
     sport: state.selectedSport,
@@ -285,6 +308,7 @@ document.querySelector("#timer-reset").addEventListener("click", () => {
 
 document.querySelector("#add-player-form").addEventListener("submit", (event) => {
   event.preventDefault();
+  if (state.setupRole !== "host") return;
   const input = document.querySelector("#new-player-name");
   const roleSelect = document.querySelector("#new-player-role");
   const teamInput = document.querySelector("#new-player-team");
@@ -297,6 +321,7 @@ document.querySelector("#add-player-form").addEventListener("submit", (event) =>
 
 document.querySelector("#add-group-form").addEventListener("submit", (event) => {
   event.preventDefault();
+  if (state.setupRole !== "host") return;
   const groupName = cleanName(document.querySelector("#group-name").value);
   const personName = cleanName(document.querySelector("#organizer-name").value);
   if (!groupName || !personName) return;
@@ -309,12 +334,9 @@ document.querySelector("#add-group-form").addEventListener("submit", (event) => 
     };
     state.data.groups.push(group);
   }
-  if (state.setupRole === "host") {
-    group.organizer = personName;
-    addPlayer(personName, ["organizer", "player"]);
-  } else {
-    addPlayer(personName, ["player"]);
-  }
+  group.organizer = personName;
+  state.data.currentPlayerName = personName;
+  addPlayer(personName, ["organizer", "player"]);
   state.selectedGroupId = group.id;
   document.querySelector("#group-name").value = "";
   document.querySelector("#organizer-name").value = "";
@@ -326,6 +348,9 @@ document.querySelector("#groups-list").addEventListener("click", (event) => {
   const button = event.target.closest("[data-group-id]");
   if (!button) return;
   state.selectedGroupId = button.dataset.groupId;
+  if (state.setupRole === "joiner" && state.data.currentPlayerName) {
+    upsertPlayer(state.data.players, state.data.currentPlayerName, ["player"], "", state.selectedGroupId, state.data.currentPlayerCode);
+  }
   saveData();
   render();
 });
@@ -438,6 +463,7 @@ function findPlayerByName(name) {
 
 function render() {
   renderSetupRole();
+  renderCurrentPlayer();
   renderGroupContext();
   renderDashboard();
   renderAllTime();
@@ -446,6 +472,13 @@ function render() {
   renderPlayers();
   renderHistory();
   renderLeaderboard();
+}
+
+function renderCurrentPlayer() {
+  const name = state.data.currentPlayerName || state.data.currentPlayerCode || "Player";
+  document.querySelector("#welcome-player-name").textContent = name;
+  document.querySelector("#current-player-input").value = state.data.currentPlayerName || "";
+  document.querySelector("#current-player-code").textContent = state.data.currentPlayerCode;
 }
 
 function renderTeams() {
@@ -488,7 +521,13 @@ function renderSetupRole() {
     button.classList.toggle("active", button.dataset.setupRole === state.setupRole);
   });
   const isHost = state.setupRole === "host";
-  document.querySelector("#group-submit-label").textContent = isHost ? "Create group as host" : "Join group";
+  document.querySelector("#add-group-form").hidden = !isHost;
+  document.querySelector("#joiner-group-note").hidden = isHost;
+  document.querySelector("#add-player-form").hidden = !isHost;
+  document.querySelector("#player-management-note").textContent = isHost
+    ? "As host, you can add/change players and teams in the active group."
+    : "Joiners can view records and select a group. Player/team management is host-only.";
+  document.querySelector("#group-submit-label").textContent = "Create group as host";
   document.querySelector("#organizer-name").placeholder = isHost ? "Your organizer name" : "Your player name";
 }
 
@@ -525,7 +564,7 @@ function renderPlayers() {
 function renderGroups() {
   const list = document.querySelector("#groups-list");
   if (!state.data.groups.length) {
-    list.innerHTML = `<div class="empty-state">No groups yet. Create one as a host or join by entering a group name.</div>`;
+    list.innerHTML = `<div class="empty-state">${state.setupRole === "host" ? "No groups yet. Create one as a host." : "No existing groups on this device yet. Ask the host to create a group first."}</div>`;
     return;
   }
   list.innerHTML = state.data.groups.map((group) => {

@@ -1,6 +1,6 @@
 # Deploy J1-Hoops j1-hoops-scorekit to GitHub Pages
 
-This folder is ready for GitHub Pages. The `index.html` file is already at the top level, which GitHub Pages needs as the site entry file. The app opens clean with no demo names, groups, or matches, and lets players be assigned to teams inside a group.
+This folder is ready for GitHub Pages. The `index.html` file is already at the top level, which GitHub Pages needs as the site entry file. The app opens clean with no demo names, groups, or matches, generates a player code at startup, and supports host-only player/team management.
 
 ## Upload Through GitHub Website
 

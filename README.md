@@ -4,7 +4,7 @@ J1-Hoops Scorekit is an iPhone-friendly black-and-white PWA prototype for scorin
 
 Open `INSTALLER.html` first. It acts as the iPhone install launcher for the PWA version.
 
-The app opens clean with no demo players, groups, or match history. A user can choose **Host** to create a group, or **Joiner** to join/add themselves to a group. Each person gets a unique code like `Player#00000`, can be marked as Player, Organizer, or Organizer + Player, and can be assigned to a team inside the active group. Records are stored locally on the device.
+The app opens clean with no demo players, groups, or match history. A player code like `Player#00000` is generated at startup. A user enters their player name, then chooses **Host** to create/manage a group or **Joiner** to select an existing group. Only hosts can add/change players and teams in a group. Records are stored locally on the device.
 
 Basketball matches include a 12-minute countdown timer with start, pause, and reset controls.
 
