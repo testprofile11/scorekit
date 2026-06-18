@@ -1,0 +1,18 @@
+{
+  "name": "ScoreKit",
+  "short_name": "ScoreKit",
+  "description": "A clean game scoring and win/loss tracker for basketball, pickleball, and badminton.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f7f7",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

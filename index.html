@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ScoreKit">
+  <meta name="description" content="ScoreKit is a clean game scoring and win/loss tracker for basketball, pickleball, and badminton.">
+  <title>ScoreKit | Game scoring prototype</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="phone-shell">
+    <main class="app" aria-live="polite">
+      <header class="topbar">
+        <button class="icon-button" id="back-button" type="button" aria-label="Go back" hidden>←</button>
+        <a class="brand" href="#dashboard" aria-label="ScoreKit dashboard">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Score<strong>Kit</strong></span>
+        </a>
+        <button class="icon-button" id="reset-demo" type="button" aria-label="Reset demo data">↻</button>
+      </header>
+
+      <section id="dashboard" class="screen active">
+        <div class="hero-card">
+          <div class="eyebrow"><span></span> Match control</div>
+          <h1>Track wins, losses, and live scores.</h1>
+          <p>Create your own group as the organizer, add players, score each game, and keep records on this device.</p>
+          <div class="group-pill">
+            <span>Active group</span>
+            <strong id="current-group-name">Saturday Open Gym</strong>
+            <small id="current-group-organizer">Organizer: You</small>
+          </div>
+          <button class="button primary" data-go="new-match" type="button">Start new game <b>→</b></button>
+        </div>
+
+        <div class="stats-grid">
+          <article>
+            <span>Total games</span>
+            <strong id="total-games">0</strong>
+          </article>
+          <article>
+            <span>Players</span>
+            <strong id="total-players">0</strong>
+          </article>
+          <article>
+            <span>Top player</span>
+            <strong id="top-player">-</strong>
+          </article>
+        </div>
+
+        <div class="section-head">
+          <h2>Recent matches</h2>
+          <button class="text-button" data-go="history" type="button">View all</button>
+        </div>
+        <div id="recent-list" class="match-list"></div>
+
+        <div class="section-head all-time-head">
+          <h2>All-time win/loss</h2>
+          <button class="text-button" data-go="players" type="button">Players</button>
+        </div>
+        <div id="all-time-list" class="leaderboard compact"></div>
+      </section>
+
+      <section id="new-match" class="screen">
+        <div class="section-title">
+          <div class="eyebrow"><span></span> New game</div>
+          <h2>Choose sport and players.</h2>
+        </div>
+        <p class="helper-copy">This match will be saved under <strong id="match-group-name">Saturday Open Gym</strong>.</p>
+
+        <div class="sport-grid" id="sport-grid">
+          <button class="sport-card selected" type="button" data-sport="basketball">
+            <span>🏀</span><strong>Basketball</strong><small>First to custom target</small>
+          </button>
+          <button class="sport-card" type="button" data-sport="pickleball">
+            <span>◐</span><strong>Pickleball</strong><small>First to 11, win by 2</small>
+          </button>
+          <button class="sport-card" type="button" data-sport="badminton">
+            <span>⌁</span><strong>Badminton</strong><small>First to 21, win by 2</small>
+          </button>
+        </div>
+
+        <form id="match-form" class="panel-form">
+          <label>
+            Player / Team A
+            <input id="player-a" autocomplete="off" value="Mia" required>
+          </label>
+          <label>
+            Player / Team B
+            <input id="player-b" autocomplete="off" value="Noah" required>
+          </label>
+          <label>
+            Target score
+            <input id="target-score" type="number" min="1" max="200" value="21" required>
+          </label>
+          <button class="button primary full" type="submit">Open scoreboard <b>→</b></button>
+        </form>
+      </section>
+
+      <section id="scoreboard" class="screen">
+        <div class="score-header">
+          <div>
+            <div class="eyebrow"><span></span> Live score</div>
+            <h2 id="score-sport">Basketball</h2>
+          </div>
+          <button class="pill-button" id="swap-sides" type="button">Swap</button>
+        </div>
+
+        <div class="scoreboard-card">
+          <article class="player-score">
+            <span id="score-name-a">Player A</span>
+            <strong id="score-a">0</strong>
+            <div class="score-actions">
+              <button type="button" data-side="a" data-delta="-1">−</button>
+              <button type="button" data-side="a" data-delta="1">+</button>
+            </div>
+          </article>
+          <div class="versus">VS</div>
+          <article class="player-score">
+            <span id="score-name-b">Player B</span>
+            <strong id="score-b">0</strong>
+            <div class="score-actions">
+              <button type="button" data-side="b" data-delta="-1">−</button>
+              <button type="button" data-side="b" data-delta="1">+</button>
+            </div>
+          </article>
+        </div>
+
+        <div class="match-status" id="match-status">Target: 21 points</div>
+
+        <div class="live-tracker">
+          <div class="tracker-heading">
+            <span>During this game</span>
+            <strong id="live-result-label">Tied</strong>
+          </div>
+          <div class="tracker-grid">
+            <article>
+              <span id="live-name-a">Player A</span>
+              <strong id="live-record-a">0W / 0L</strong>
+              <small id="live-projection-a">Projected: -</small>
+            </article>
+            <article>
+              <span id="live-name-b">Player B</span>
+              <strong id="live-record-b">0W / 0L</strong>
+              <small id="live-projection-b">Projected: -</small>
+            </article>
+          </div>
+        </div>
+
+        <div class="score-toolbar">
+          <button class="button quiet" id="undo-point" type="button">Undo</button>
+          <button class="button quiet" id="reset-score" type="button">Reset</button>
+          <button class="button primary" id="finish-match" type="button">Save result</button>
+        </div>
+      </section>
+
+      <section id="result" class="screen">
+        <div class="result-card">
+          <span class="result-kicker">Match saved</span>
+          <h2 id="winner-name">Winner</h2>
+          <p id="result-copy">Final score saved to match history.</p>
+          <div class="result-score" id="result-score">0 - 0</div>
+          <button class="button primary full" data-go="dashboard" type="button">Back to dashboard</button>
+          <button class="button quiet full" data-go="new-match" type="button">Start another game</button>
+        </div>
+      </section>
+
+      <section id="players" class="screen">
+        <div class="section-title">
+          <div class="eyebrow"><span></span> All-time records</div>
+          <h2>Lifetime win/loss tracker.</h2>
+        </div>
+        <p class="helper-copy">Add names and mark each person as an organizer, player, or both. All-time wins and losses are saved on this device across every sport.</p>
+        <form id="add-player-form" class="inline-form">
+          <input id="new-player-name" placeholder="Type a player name" autocomplete="off">
+          <select id="new-player-role" aria-label="Role">
+            <option value="player">Player</option>
+            <option value="organizer">Organizer</option>
+            <option value="both">Organizer + Player</option>
+          </select>
+          <button type="submit">Add</button>
+        </form>
+        <div id="players-list" class="leaderboard"></div>
+      </section>
+
+      <section id="groups" class="screen">
+        <div class="section-title">
+          <div class="eyebrow"><span></span> Organizer mode</div>
+          <h2>Create and manage groups.</h2>
+        </div>
+        <p class="helper-copy">Add your own game group, set the organizer name, then switch groups before scoring matches.</p>
+        <form id="add-group-form" class="panel-form">
+          <label>
+            Group name
+            <input id="group-name" autocomplete="off" placeholder="Example: Friday Badminton Club" required>
+          </label>
+          <label>
+            Organizer name
+            <input id="organizer-name" autocomplete="off" placeholder="Your name" required>
+          </label>
+          <button class="button primary full" type="submit">Create group</button>
+        </form>
+        <div id="groups-list" class="group-list"></div>
+      </section>
+
+      <section id="history" class="screen">
+        <div class="section-title">
+          <div class="eyebrow"><span></span> Archive</div>
+          <h2>Match history.</h2>
+        </div>
+        <div id="history-list" class="match-list"></div>
+      </section>
+
+      <section id="leaderboard" class="screen">
+        <div class="section-title">
+          <div class="eyebrow"><span></span> Rankings</div>
+          <h2>Leaderboard.</h2>
+        </div>
+        <div class="filter-row">
+          <button class="filter active" type="button" data-filter="all">All</button>
+          <button class="filter" type="button" data-filter="basketball">Basketball</button>
+          <button class="filter" type="button" data-filter="pickleball">Pickleball</button>
+          <button class="filter" type="button" data-filter="badminton">Badminton</button>
+        </div>
+        <div id="leaderboard-list" class="leaderboard"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Main app navigation">
+      <button class="tab active" type="button" data-go="dashboard"><span>▦</span>Home</button>
+      <button class="tab" type="button" data-go="new-match"><span>＋</span>Game</button>
+      <button class="tab" type="button" data-go="groups"><span>G</span>Groups</button>
+      <button class="tab" type="button" data-go="players"><span>◎</span>Players</button>
+      <button class="tab" type="button" data-go="leaderboard"><span>≡</span>Ranks</button>
+    </nav>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

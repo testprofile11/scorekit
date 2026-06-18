@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <title>ScoreKit Installer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      color: #050505;
+      background: #d8d8d8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(430px, calc(100% - 28px));
+      padding: 28px;
+      background: #f7f7f7;
+      border: 1px solid rgba(0, 0, 0, .14);
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .16);
+    }
+    .mark {
+      width: 56px;
+      height: 56px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: end;
+      gap: 5px;
+      padding: 13px;
+      background: #000;
+      border-radius: 50%;
+    }
+    .mark span { display: block; background: #fff; border-radius: 2px; }
+    .mark span:nth-child(1) { height: 45%; }
+    .mark span:nth-child(2) { height: 100%; }
+    .mark span:nth-child(3) { height: 70%; }
+    h1 {
+      margin: 22px 0 10px;
+      font-size: 48px;
+      line-height: .95;
+      letter-spacing: -.06em;
+    }
+    p {
+      color: #686868;
+      line-height: 1.55;
+    }
+    .button {
+      width: 100%;
+      min-height: 54px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0;
+      color: white;
+      background: #000;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 800;
+    }
+    ol {
+      margin: 18px 0 0;
+      padding-left: 22px;
+      color: #686868;
+    }
+    li { margin: 9px 0; }
+    .note {
+      margin-top: 18px;
+      padding: 14px;
+      color: #050505;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, .14);
+      border-radius: 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <h1>ScoreKit Installer</h1>
+    <p>Open ScoreKit, then install it to your iPhone Home Screen from Safari.</p>
+    <a class="button" href="index.html">Open ScoreKit</a>
+    <ol>
+      <li>Upload this folder to an HTTPS web host.</li>
+      <li>Open this installer page in Safari on iPhone.</li>
+      <li>Tap <strong>Open ScoreKit</strong>.</li>
+      <li>Tap Safari Share.</li>
+      <li>Tap <strong>Add to Home Screen</strong>.</li>
+    </ol>
+    <div class="note">
+      iPhone does not allow normal downloaded app installer files unless the app is distributed through TestFlight, the App Store, or an Apple-signed enterprise system.
+    </div>
+  </main>
+</body>
+</html>
