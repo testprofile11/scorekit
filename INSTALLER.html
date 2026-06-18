@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000000">
-  <title>ScoreKit Installer</title>
+  <title>J1-Hoops Scorekit Installer</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -27,18 +27,11 @@
     .mark {
       width: 56px;
       height: 56px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      align-items: end;
-      gap: 5px;
-      padding: 13px;
-      background: #000;
+      display: block;
+      object-fit: cover;
       border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, .14);
     }
-    .mark span { display: block; background: #fff; border-radius: 2px; }
-    .mark span:nth-child(1) { height: 45%; }
-    .mark span:nth-child(2) { height: 100%; }
-    .mark span:nth-child(3) { height: 70%; }
     h1 {
       margin: 22px 0 10px;
       font-size: 48px;
@@ -81,14 +74,14 @@
 </head>
 <body>
   <main>
-    <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
-    <h1>ScoreKit Installer</h1>
-    <p>Open ScoreKit, then install it to your iPhone Home Screen from Safari.</p>
-    <a class="button" href="index.html">Open ScoreKit</a>
+    <img class="mark" src="logo.png" alt="J1 Hoops logo">
+    <h1>J1-Hoops Scorekit Installer</h1>
+    <p>Open J1-Hoops Scorekit, then install it to your iPhone Home Screen from Safari.</p>
+    <a class="button" href="index.html">Open J1-Hoops Scorekit</a>
     <ol>
       <li>Upload this folder to an HTTPS web host.</li>
       <li>Open this installer page in Safari on iPhone.</li>
-      <li>Tap <strong>Open ScoreKit</strong>.</li>
+      <li>Tap <strong>Open J1-Hoops Scorekit</strong>.</li>
       <li>Tap Safari Share.</li>
       <li>Tap <strong>Add to Home Screen</strong>.</li>
     </ol>
@@ -98,3 +91,4 @@
   </main>
 </body>
 </html>
+

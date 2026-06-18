@@ -1,78 +1,100 @@
 const screens = [...document.querySelectorAll(".screen")];
 const tabs = [...document.querySelectorAll(".tab")];
 const backButton = document.querySelector("#back-button");
+const STORAGE_KEY = "j1-hoops-scorekit-data-v1";
 
 const defaults = {
-  groups: [
-    { id: "group-1", name: "Saturday Open Gym", organizer: "You" }
-  ],
-  selectedGroupId: "group-1",
-  players: [
-    { name: "Mia", roles: ["player", "organizer"] },
-    { name: "Noah", roles: ["player"] },
-    { name: "Ava", roles: ["player"] },
-    { name: "Liam", roles: ["player"] }
-  ],
-  matches: [
-    { groupId: "group-1", sport: "pickleball", a: "Mia", b: "Noah", scoreA: 11, scoreB: 8, winner: "Mia", date: "2026-06-12T10:30:00" },
-    { groupId: "group-1", sport: "badminton", a: "Ava", b: "Liam", scoreA: 18, scoreB: 21, winner: "Liam", date: "2026-06-13T18:10:00" },
-    { groupId: "group-1", sport: "basketball", a: "Mia", b: "Ava", scoreA: 32, scoreB: 27, winner: "Mia", date: "2026-06-14T15:45:00" }
-  ]
+  groups: [],
+  selectedGroupId: null,
+  setupRole: "host",
+  nextPlayerNumber: 0,
+  players: [],
+  matches: []
 };
 
 const state = {
   selectedSport: "basketball",
   selectedGroupId: null,
+  setupRole: "host",
   leaderboardFilter: "all",
   history: ["dashboard"],
   activeMatch: null,
+  timerInterval: null,
   pointStack: [],
   data: loadData()
 };
 
 function loadData() {
-  const stored = localStorage.getItem("scorekit-data");
+  const stored = localStorage.getItem(STORAGE_KEY);
   const data = stored ? JSON.parse(stored) : structuredClone(defaults);
   const normalized = normalizeData(data);
-  localStorage.setItem("scorekit-data", JSON.stringify(normalized));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
   return normalized;
 }
 
 function saveData() {
   state.data.selectedGroupId = state.selectedGroupId;
-  localStorage.setItem("scorekit-data", JSON.stringify(state.data));
+  state.data.setupRole = state.setupRole;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
 }
 
 function normalizeData(data) {
   const normalized = { ...structuredClone(defaults), ...data };
-  if (!Array.isArray(normalized.groups) || !normalized.groups.length) {
-    normalized.groups = structuredClone(defaults.groups);
+  if (!Array.isArray(normalized.groups)) {
+    normalized.groups = [];
   }
-  if (!normalized.selectedGroupId || !normalized.groups.some((group) => group.id === normalized.selectedGroupId)) {
+  normalized.nextPlayerNumber = Number.isInteger(normalized.nextPlayerNumber) ? normalized.nextPlayerNumber : 0;
+  normalized.groups = normalized.groups.map((group) => ({
+    teams: [],
+    ...group,
+    teams: Array.isArray(group.teams) ? group.teams : []
+  }));
+  if (normalized.groups.length && (!normalized.selectedGroupId || !normalized.groups.some((group) => group.id === normalized.selectedGroupId))) {
     normalized.selectedGroupId = normalized.groups[0].id;
   }
+  if (!normalized.groups.length) normalized.selectedGroupId = null;
+  normalized.setupRole = normalized.setupRole === "joiner" ? "joiner" : "host";
   normalized.matches = (normalized.matches || []).map((match) => ({
     ...match,
     groupId: match.groupId || normalized.selectedGroupId
   }));
   normalized.players = normalizePlayers(normalized.players);
-  normalized.groups.forEach((group) => upsertPlayer(normalized.players, group.organizer, ["organizer"]));
+  normalized.players.forEach((player) => {
+    if (!player.code) player.code = nextPlayerCode(normalized);
+  });
+  normalized.groups.forEach((group) => {
+    if (group.organizer) upsertPlayer(normalized.players, group.organizer, ["organizer"]);
+  });
   return normalized;
 }
 
 state.selectedGroupId = state.data.selectedGroupId;
+state.setupRole = state.data.setupRole;
 
 function normalizePlayers(players) {
   if (!Array.isArray(players)) return [];
   return players
     .map((player) => {
-      if (typeof player === "string") return { name: player, roles: ["player"] };
+      if (typeof player === "string") return { code: "", name: player, roles: ["player"], teams: {} };
       return {
+        code: player.code || "",
         name: cleanName(player.name || ""),
-        roles: normalizeRoles(player.roles)
+        roles: normalizeRoles(player.roles),
+        teams: normalizeTeams(player.teams)
       };
     })
     .filter((player) => player.name);
+}
+
+function nextPlayerCode(data = state.data) {
+  const number = data.nextPlayerNumber || 0;
+  data.nextPlayerNumber = number + 1;
+  return `Player#${String(number).padStart(5, "0")}`;
+}
+
+function normalizeTeams(teams) {
+  if (!teams) return {};
+  return Object.fromEntries(Object.entries(teams).map(([groupId, team]) => [groupId, cleanName(team)]).filter(([, team]) => team));
 }
 
 function normalizeRoles(roles) {
@@ -94,15 +116,21 @@ function roleLabel(roles) {
   return "Player";
 }
 
-function upsertPlayer(players, name, roles = ["player"]) {
+function upsertPlayer(players, name, roles = ["player"], teamName = "", groupId = state.selectedGroupId) {
   const cleaned = cleanName(name);
-  if (!cleaned) return;
+  if (!cleaned) return null;
+  const team = cleanName(teamName);
   const existing = players.find((player) => player.name.toLowerCase() === cleaned.toLowerCase());
   if (existing) {
     existing.roles = normalizeRoles([...existing.roles, ...roles]);
-    return;
+    existing.teams = normalizeTeams(existing.teams);
+    if (!existing.code) existing.code = nextPlayerCode();
+    if (team && groupId) existing.teams[groupId] = team;
+    return existing;
   }
-  players.push({ name: cleaned, roles: normalizeRoles(roles) });
+  const player = { code: nextPlayerCode(), name: cleaned, roles: normalizeRoles(roles), teams: team && groupId ? { [groupId]: team } : {} };
+  players.push(player);
+  return player;
 }
 
 function goTo(screenId, push = true) {
@@ -115,6 +143,14 @@ function goTo(screenId, push = true) {
 
 document.querySelectorAll("[data-go]").forEach((button) => {
   button.addEventListener("click", () => goTo(button.dataset.go));
+});
+
+document.querySelectorAll("[data-mode]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.setupRole = button.dataset.mode;
+    saveData();
+    goTo("groups");
+  });
 });
 
 backButton.addEventListener("click", () => {
@@ -141,19 +177,27 @@ document.querySelectorAll(".sport-card").forEach((button) => {
 
 document.querySelector("#match-form").addEventListener("submit", (event) => {
   event.preventDefault();
+  if (!activeGroup()) {
+    goTo("groups");
+    return;
+  }
   const playerA = cleanName(document.querySelector("#player-a").value);
   const playerB = cleanName(document.querySelector("#player-b").value);
   if (!playerA || !playerB || playerA.toLowerCase() === playerB.toLowerCase()) return;
-  addPlayer(playerA);
-  addPlayer(playerB);
+  const playerARecord = addPlayer(playerA);
+  const playerBRecord = addPlayer(playerB);
   state.activeMatch = {
     groupId: state.selectedGroupId,
     sport: state.selectedSport,
     a: playerA,
     b: playerB,
+    aCode: playerARecord.code,
+    bCode: playerBRecord.code,
     scoreA: 0,
     scoreB: 0,
-    target: Number(document.querySelector("#target-score").value) || 21
+    target: Number(document.querySelector("#target-score").value) || 21,
+    timerSeconds: state.selectedSport === "basketball" ? 720 : 0,
+    timerRunning: false
   };
   state.pointStack = [];
   saveData();
@@ -185,6 +229,7 @@ document.querySelector("#reset-score").addEventListener("click", () => {
   state.activeMatch.scoreA = 0;
   state.activeMatch.scoreB = 0;
   state.pointStack = [];
+  resetTimer();
   updateScoreboard();
 });
 
@@ -203,16 +248,21 @@ document.querySelector("#finish-match").addEventListener("click", () => {
     document.querySelector("#match-status").textContent = "A match cannot end in a tie. Add one more point.";
     return;
   }
+  stopTimer();
   match.winner = match.scoreA > match.scoreB ? match.a : match.b;
+  match.winnerCode = match.scoreA > match.scoreB ? match.aCode : match.bCode;
   match.date = new Date().toISOString();
   state.data.matches.unshift({
     groupId: match.groupId,
     sport: match.sport,
     a: match.a,
     b: match.b,
+    aCode: match.aCode,
+    bCode: match.bCode,
     scoreA: match.scoreA,
     scoreB: match.scoreB,
     winner: match.winner,
+    winnerCode: match.winnerCode,
     date: match.date
   });
   saveData();
@@ -223,12 +273,24 @@ document.querySelector("#finish-match").addEventListener("click", () => {
   goTo("result");
 });
 
+document.querySelector("#timer-toggle").addEventListener("click", () => {
+  if (!state.activeMatch || state.activeMatch.sport !== "basketball") return;
+  state.activeMatch.timerRunning ? stopTimer() : startTimer();
+  updateTimerDisplay();
+});
+
+document.querySelector("#timer-reset").addEventListener("click", () => {
+  resetTimer();
+});
+
 document.querySelector("#add-player-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const input = document.querySelector("#new-player-name");
   const roleSelect = document.querySelector("#new-player-role");
-  addPlayer(input.value, roleValueToRoles(roleSelect.value));
+  const teamInput = document.querySelector("#new-player-team");
+  addPlayer(input.value, roleValueToRoles(roleSelect.value), teamInput.value);
   input.value = "";
+  teamInput.value = "";
   saveData();
   render();
 });
@@ -236,15 +298,23 @@ document.querySelector("#add-player-form").addEventListener("submit", (event) =>
 document.querySelector("#add-group-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const groupName = cleanName(document.querySelector("#group-name").value);
-  const organizerName = cleanName(document.querySelector("#organizer-name").value);
-  if (!groupName || !organizerName) return;
-  const group = {
-    id: `group-${Date.now()}`,
-    name: groupName,
-    organizer: organizerName
-  };
-  state.data.groups.push(group);
-  addPlayer(organizerName, ["organizer"]);
+  const personName = cleanName(document.querySelector("#organizer-name").value);
+  if (!groupName || !personName) return;
+  let group = state.data.groups.find((item) => item.name.toLowerCase() === groupName.toLowerCase());
+  if (!group) {
+    group = {
+      id: `group-${Date.now()}`,
+      name: groupName,
+      organizer: state.setupRole === "host" ? personName : ""
+    };
+    state.data.groups.push(group);
+  }
+  if (state.setupRole === "host") {
+    group.organizer = personName;
+    addPlayer(personName, ["organizer", "player"]);
+  } else {
+    addPlayer(personName, ["player"]);
+  }
   state.selectedGroupId = group.id;
   document.querySelector("#group-name").value = "";
   document.querySelector("#organizer-name").value = "";
@@ -260,6 +330,14 @@ document.querySelector("#groups-list").addEventListener("click", (event) => {
   render();
 });
 
+document.querySelector("#role-choice").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-setup-role]");
+  if (!button) return;
+  state.setupRole = button.dataset.setupRole;
+  saveData();
+  renderSetupRole();
+});
+
 document.querySelectorAll(".filter").forEach((button) => {
   button.addEventListener("click", () => {
     state.leaderboardFilter = button.dataset.filter;
@@ -272,8 +350,13 @@ function cleanName(name) {
   return name.trim().replace(/\s+/g, " ");
 }
 
-function addPlayer(name, roles = ["player"]) {
-  upsertPlayer(state.data.players, name, roles);
+function addPlayer(name, roles = ["player"], teamName = "") {
+  const group = activeGroup();
+  const groupId = group ? group.id : state.selectedGroupId;
+  const team = cleanName(teamName);
+  const player = upsertPlayer(state.data.players, name, roles, team, groupId);
+  if (team && group) addTeamToGroup(group, team);
+  return player;
 }
 
 function titleCase(value) {
@@ -281,26 +364,44 @@ function titleCase(value) {
 }
 
 function activeGroup() {
-  return state.data.groups.find((group) => group.id === state.selectedGroupId) || state.data.groups[0];
+  return state.data.groups.find((group) => group.id === state.selectedGroupId) || state.data.groups[0] || null;
+}
+
+function addTeamToGroup(group, teamName) {
+  const team = cleanName(teamName);
+  if (!team) return;
+  if (!Array.isArray(group.teams)) group.teams = [];
+  if (!group.teams.some((item) => item.toLowerCase() === team.toLowerCase())) group.teams.push(team);
 }
 
 function groupMatches() {
-  return state.data.matches.filter((match) => match.groupId === activeGroup().id);
+  const group = activeGroup();
+  if (!group) return [];
+  return state.data.matches.filter((match) => match.groupId === group.id);
 }
 
 function getRecords(filter = "all") {
-  const records = new Map(state.data.players.map((player) => [player.name, { name: player.name, roles: player.roles, wins: 0, losses: 0, games: 0 }]));
+  const group = activeGroup();
+  const records = new Map(state.data.players.map((player) => [player.code, { code: player.code, name: player.name, roles: player.roles, team: group ? player.teams?.[group.id] || "" : "", wins: 0, losses: 0, games: 0 }]));
   groupMatches()
     .filter((match) => filter === "all" || match.sport === filter)
     .forEach((match) => {
-      [match.a, match.b].forEach((player) => {
-        if (!records.has(player)) records.set(player, { name: player, roles: ["player"], wins: 0, losses: 0, games: 0 });
+      const aCode = match.aCode || findPlayerByName(match.a)?.code || match.a;
+      const bCode = match.bCode || findPlayerByName(match.b)?.code || match.b;
+      const winnerCode = match.winnerCode || (match.winner === match.a ? aCode : bCode);
+      const loserCode = winnerCode === aCode ? bCode : aCode;
+      [
+        { code: aCode, name: match.a },
+        { code: bCode, name: match.b }
+      ].forEach((player) => {
+        if (!records.has(player.code)) records.set(player.code, { code: player.code, name: player.name, roles: ["player"], team: "", wins: 0, losses: 0, games: 0 });
       });
-      const loser = match.winner === match.a ? match.b : match.a;
-      records.get(match.winner).wins += 1;
-      records.get(match.winner).games += 1;
-      records.get(loser).losses += 1;
-      records.get(loser).games += 1;
+      if (!records.has(winnerCode)) records.set(winnerCode, { code: winnerCode, name: match.winner, roles: ["player"], team: "", wins: 0, losses: 0, games: 0 });
+      if (!records.has(loserCode)) records.set(loserCode, { code: loserCode, name: loserCode === aCode ? match.a : match.b, roles: ["player"], team: "", wins: 0, losses: 0, games: 0 });
+      records.get(winnerCode).wins += 1;
+      records.get(winnerCode).games += 1;
+      records.get(loserCode).losses += 1;
+      records.get(loserCode).games += 1;
     });
   return [...records.values()].sort((a, b) => {
     const rateA = a.games ? a.wins / a.games : 0;
@@ -310,7 +411,9 @@ function getRecords(filter = "all") {
 }
 
 function getPlayerRecord(name, filter = "all") {
-  return getRecords(filter).find((record) => record.name.toLowerCase() === name.toLowerCase()) || {
+  const player = findPlayerByName(name);
+  return getRecords(filter).find((record) => record.code === player?.code || record.name.toLowerCase() === name.toLowerCase()) || {
+    code: player?.code || "",
     name,
     wins: 0,
     losses: 0,
@@ -318,22 +421,65 @@ function getPlayerRecord(name, filter = "all") {
   };
 }
 
+function findPlayerByName(name) {
+  const cleaned = cleanName(name).toLowerCase();
+  return state.data.players.find((player) => player.name.toLowerCase() === cleaned);
+}
+
 function render() {
+  renderSetupRole();
   renderGroupContext();
   renderDashboard();
   renderAllTime();
   renderGroups();
+  renderTeams();
   renderPlayers();
   renderHistory();
   renderLeaderboard();
 }
 
+function renderTeams() {
+  const list = document.querySelector("#teams-list");
+  const group = activeGroup();
+  if (!group) {
+    list.innerHTML = `<div class="empty-state">Create or join a group before assigning teams.</div>`;
+    return;
+  }
+  if (!group.teams?.length) {
+    list.innerHTML = `<div class="empty-state">No teams yet. Add a team name when adding a player.</div>`;
+    return;
+  }
+  list.innerHTML = `
+    <div class="team-strip">
+      <span>Teams in ${group.name}</span>
+      ${group.teams.map((team) => `<b>${team}</b>`).join("")}
+    </div>
+  `;
+}
+
 function renderGroupContext() {
   const group = activeGroup();
-  const organizer = state.data.players.find((player) => player.name.toLowerCase() === group.organizer.toLowerCase());
+  if (!group) {
+    document.querySelector("#current-group-name").textContent = "No group yet";
+    document.querySelector("#current-group-organizer").textContent = "Choose Host or Joiner to begin";
+    document.querySelector("#match-group-name").textContent = "your selected group";
+    return;
+  }
+  const organizer = group.organizer ? state.data.players.find((player) => player.name.toLowerCase() === group.organizer.toLowerCase()) : null;
   document.querySelector("#current-group-name").textContent = group.name;
-  document.querySelector("#current-group-organizer").textContent = `Organizer: ${group.organizer}${organizer ? ` · ${roleLabel(organizer.roles)}` : ""}`;
+  document.querySelector("#current-group-organizer").textContent = group.organizer
+    ? `Organizer: ${group.organizer}${organizer ? ` · ${roleLabel(organizer.roles)}` : ""}`
+    : "Organizer: Not set yet";
   document.querySelector("#match-group-name").textContent = group.name;
+}
+
+function renderSetupRole() {
+  document.querySelectorAll("[data-setup-role]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.setupRole === state.setupRole);
+  });
+  const isHost = state.setupRole === "host";
+  document.querySelector("#group-submit-label").textContent = isHost ? "Create group as host" : "Join group";
+  document.querySelector("#organizer-name").placeholder = isHost ? "Your organizer name" : "Your player name";
 }
 
 function renderDashboard() {
@@ -368,6 +514,10 @@ function renderPlayers() {
 
 function renderGroups() {
   const list = document.querySelector("#groups-list");
+  if (!state.data.groups.length) {
+    list.innerHTML = `<div class="empty-state">No groups yet. Create one as a host or join by entering a group name.</div>`;
+    return;
+  }
   list.innerHTML = state.data.groups.map((group) => {
     const isActive = group.id === state.selectedGroupId;
     const totalGames = state.data.matches.filter((match) => match.groupId === group.id).length;
@@ -376,7 +526,7 @@ function renderGroups() {
         <div>
           <small>${isActive ? "Active group" : "Group"}</small>
           <strong>${group.name}</strong>
-          <span>Organizer: ${group.organizer} · ${totalGames} games</span>
+          <span>Organizer: ${group.organizer || "Not set yet"} · ${totalGames} games</span>
         </div>
         <button type="button" data-group-id="${group.id}">${isActive ? "Selected" : "Use"}</button>
       </article>
@@ -403,7 +553,7 @@ function recordRow(record, index) {
   return `
     <article class="leader-row">
       <div class="rank">${index + 1}</div>
-      <div><strong>${record.name}</strong><em>${roleLabel(record.roles)}</em><span>Overall: ${record.wins} wins / ${record.losses} losses · ${record.games} games</span></div>
+      <div><strong>${record.name}</strong><code>${record.code}</code><em>${roleLabel(record.roles)}</em>${record.team ? `<em class="team-badge">${record.team}</em>` : ""}<span>Overall: ${record.wins} wins / ${record.losses} losses · ${record.games} games</span></div>
       <div class="leader-score">${rate}%<small>Win rate</small></div>
     </article>
   `;
@@ -447,7 +597,51 @@ function updateScoreboard() {
   document.querySelector("#match-status").textContent = validWin
     ? `${leader}. Ready to save result.`
     : `${leader} · Target: ${match.target}${winByTwo ? ", win by 2" : ""}`;
+  renderTimer(match);
   updateLiveTracker(match);
+}
+
+function renderTimer(match) {
+  const timer = document.querySelector("#game-timer");
+  timer.hidden = match.sport !== "basketball";
+  if (timer.hidden) return;
+  updateTimerDisplay();
+}
+
+function startTimer() {
+  stopTimer(false);
+  state.activeMatch.timerRunning = true;
+  state.timerInterval = window.setInterval(() => {
+    if (!state.activeMatch) return stopTimer();
+    state.activeMatch.timerSeconds = Math.max(0, state.activeMatch.timerSeconds - 1);
+    if (state.activeMatch.timerSeconds === 0) stopTimer();
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopTimer(markStopped = true) {
+  if (state.timerInterval) {
+    window.clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+  if (markStopped && state.activeMatch) {
+    state.activeMatch.timerRunning = false;
+  }
+}
+
+function resetTimer() {
+  if (!state.activeMatch) return;
+  stopTimer();
+  state.activeMatch.timerSeconds = state.activeMatch.sport === "basketball" ? 720 : 0;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  if (!state.activeMatch) return;
+  const minutes = Math.floor(state.activeMatch.timerSeconds / 60);
+  const seconds = state.activeMatch.timerSeconds % 60;
+  document.querySelector("#timer-display").textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+  document.querySelector("#timer-toggle").textContent = state.activeMatch.timerRunning ? "Pause" : "Start";
 }
 
 function updateLiveTracker(match) {

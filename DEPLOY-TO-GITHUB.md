@@ -1,12 +1,12 @@
-# Deploy ScoreKit to GitHub Pages
+# Deploy J1-Hoops j1-hoops-scorekit to GitHub Pages
 
-This folder is ready for GitHub Pages. The `index.html` file is already at the top level, which GitHub Pages needs as the site entry file.
+This folder is ready for GitHub Pages. The `index.html` file is already at the top level, which GitHub Pages needs as the site entry file. The app opens clean with no demo names, groups, or matches, and lets players be assigned to teams inside a group.
 
 ## Upload Through GitHub Website
 
 1. Go to https://github.com and sign in.
 2. Click **New repository**.
-3. Name it something like `scorekit`.
+3. Name it something like `J1-Hoops j1-hoops-scorekit`.
 4. Choose **Public** if you are using a free GitHub account and want GitHub Pages.
 5. Click **Create repository**.
 6. Click **uploading an existing file**.
@@ -23,7 +23,7 @@ This folder is ready for GitHub Pages. The `index.html` file is already at the t
 After a few minutes, GitHub will give you a site URL like:
 
 ```text
-https://YOUR_USERNAME.github.io/scorekit/
+https://YOUR_USERNAME.github.io/J1-Hoops j1-hoops-scorekit/
 ```
 
 Open that URL in Safari on iPhone, then tap:
@@ -46,4 +46,5 @@ Upload everything in this folder:
 - `START-HERE-iPhone.html`
 - `README.md`
 - `.nojekyll`
+
 

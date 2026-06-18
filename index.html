@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="ScoreKit">
-  <meta name="description" content="ScoreKit is a clean game scoring and win/loss tracker for basketball, pickleball, and badminton.">
-  <title>ScoreKit | Game scoring prototype</title>
+  <meta name="apple-mobile-web-app-title" content="J1-Hoops Scorekit">
+  <meta name="description" content="J1-Hoops Scorekit is a clean basketball scoring and win/loss tracker for groups, hosts, and joiners.">
+  <title>J1-Hoops Scorekit | Game scoring prototype</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -21,22 +21,22 @@
     <main class="app" aria-live="polite">
       <header class="topbar">
         <button class="icon-button" id="back-button" type="button" aria-label="Go back" hidden>←</button>
-        <a class="brand" href="#dashboard" aria-label="ScoreKit dashboard">
-          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>Score<strong>Kit</strong></span>
+        <a class="brand" href="#dashboard" aria-label="J1-Hoops Scorekit dashboard">
+          <img class="brand-logo" src="logo.png" alt="J1 Hoops logo">
+          <span>J1-Hoops <strong>Scorekit</strong></span>
         </a>
-        <button class="icon-button" id="reset-demo" type="button" aria-label="Reset demo data">↻</button>
+        <button class="icon-button" id="reset-demo" type="button" aria-label="Reset app data">↻</button>
       </header>
 
       <section id="dashboard" class="screen active">
         <div class="hero-card">
-          <div class="eyebrow"><span></span> Match control</div>
+          <div class="eyebrow"><span></span> J1 Hoops Papawis Runs</div>
           <h1>Track wins, losses, and live scores.</h1>
-          <p>Create your own group as the organizer, add players, score each game, and keep records on this device.</p>
+          <p>Choose whether you are hosting a group or joining one, then add games and track records on this device.</p>
           <div class="group-pill">
             <span>Active group</span>
-            <strong id="current-group-name">Saturday Open Gym</strong>
-            <small id="current-group-organizer">Organizer: You</small>
+            <strong id="current-group-name">No group yet</strong>
+            <small id="current-group-organizer">Choose Host or Joiner to begin</small>
           </div>
           <button class="button primary" data-go="new-match" type="button">Start new game <b>→</b></button>
         </div>
@@ -57,6 +57,23 @@
         </div>
 
         <div class="section-head">
+          <h2>Start as</h2>
+          <button class="text-button" data-go="groups" type="button">Manage</button>
+        </div>
+        <div class="mode-grid">
+          <button class="mode-card" type="button" data-mode="host">
+            <span>Host</span>
+            <strong>Create a group</strong>
+            <small>Run games, add players, and manage records.</small>
+          </button>
+          <button class="mode-card" type="button" data-mode="joiner">
+            <span>Joiner</span>
+            <strong>Join a group</strong>
+            <small>Add your name and play inside a group.</small>
+          </button>
+        </div>
+
+        <div class="section-head">
           <h2>Recent matches</h2>
           <button class="text-button" data-go="history" type="button">View all</button>
         </div>
@@ -74,7 +91,7 @@
           <div class="eyebrow"><span></span> New game</div>
           <h2>Choose sport and players.</h2>
         </div>
-        <p class="helper-copy">This match will be saved under <strong id="match-group-name">Saturday Open Gym</strong>.</p>
+        <p class="helper-copy">This match will be saved under <strong id="match-group-name">your selected group</strong>.</p>
 
         <div class="sport-grid" id="sport-grid">
           <button class="sport-card selected" type="button" data-sport="basketball">
@@ -91,11 +108,11 @@
         <form id="match-form" class="panel-form">
           <label>
             Player / Team A
-            <input id="player-a" autocomplete="off" value="Mia" required>
+            <input id="player-a" autocomplete="off" placeholder="Player or Team A" required>
           </label>
           <label>
             Player / Team B
-            <input id="player-b" autocomplete="off" value="Noah" required>
+            <input id="player-b" autocomplete="off" placeholder="Player or Team B" required>
           </label>
           <label>
             Target score
@@ -135,6 +152,17 @@
         </div>
 
         <div class="match-status" id="match-status">Target: 21 points</div>
+
+        <div class="game-timer" id="game-timer" hidden>
+          <div>
+            <span>Basketball timer</span>
+            <strong id="timer-display">12:00</strong>
+          </div>
+          <div class="timer-controls">
+            <button id="timer-toggle" type="button">Start</button>
+            <button id="timer-reset" type="button">Reset</button>
+          </div>
+        </div>
 
         <div class="live-tracker">
           <div class="tracker-heading">
@@ -186,27 +214,33 @@
             <option value="organizer">Organizer</option>
             <option value="both">Organizer + Player</option>
           </select>
+          <input id="new-player-team" placeholder="Team name, optional" autocomplete="off">
           <button type="submit">Add</button>
         </form>
+        <div id="teams-list" class="team-list"></div>
         <div id="players-list" class="leaderboard"></div>
       </section>
 
       <section id="groups" class="screen">
         <div class="section-title">
-          <div class="eyebrow"><span></span> Organizer mode</div>
-          <h2>Create and manage groups.</h2>
+          <div class="eyebrow"><span></span> Host or joiner</div>
+          <h2>Create or join a group.</h2>
         </div>
-        <p class="helper-copy">Add your own game group, set the organizer name, then switch groups before scoring matches.</p>
+        <p class="helper-copy">Choose Host if you run the group. Choose Joiner if you are joining a group and adding your player name.</p>
+        <div class="role-choice" id="role-choice">
+          <button class="active" type="button" data-setup-role="host">I am a group host</button>
+          <button type="button" data-setup-role="joiner">I am a joiner</button>
+        </div>
         <form id="add-group-form" class="panel-form">
           <label>
             Group name
-            <input id="group-name" autocomplete="off" placeholder="Example: Friday Badminton Club" required>
+            <input id="group-name" autocomplete="off" placeholder="Example: J1 Thursday Runs" required>
           </label>
           <label>
-            Organizer name
+            Your name
             <input id="organizer-name" autocomplete="off" placeholder="Your name" required>
           </label>
-          <button class="button primary full" type="submit">Create group</button>
+          <button class="button primary full" id="group-submit-label" type="submit">Create group as host</button>
         </form>
         <div id="groups-list" class="group-list"></div>
       </section>
