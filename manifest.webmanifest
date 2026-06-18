@@ -1,7 +1,7 @@
 {
-  "name": "J1-Hoops Scorekit",
+  "name": "J1 Hoops Scoreboard",
   "short_name": "J1 Hoops",
-  "description": "A clean basketball scoring and win/loss tracker for groups, hosts, and joiners.",
+  "description": "A simple basketball scoreboard for J1 Hoops with team names, scores, and timer.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f7f7f7",
