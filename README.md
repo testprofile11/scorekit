@@ -10,6 +10,8 @@ Basketball matches include a 12-minute countdown timer with start, pause, and re
 
 The app supports both portrait and landscape rotation. Landscape mode gives the live scoreboard a wider side-by-side layout.
 
+Match history can be cleared for the active group without deleting players, teams, or groups.
+
 ## Open Locally
 
 Open `index.html` in a browser to preview the prototype.

@@ -649,6 +649,20 @@ select:focus {
   border-radius: 5px;
   font-weight: 700;
 }
+.danger-button {
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 14px;
+  color: var(--green);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 800;
+}
+.danger-button:active {
+  color: white;
+  background: var(--green);
+}
 .team-list {
   margin-bottom: 14px;
 }

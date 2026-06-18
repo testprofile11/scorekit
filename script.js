@@ -338,6 +338,16 @@ document.querySelector("#role-choice").addEventListener("click", (event) => {
   renderSetupRole();
 });
 
+document.querySelector("#clear-history").addEventListener("click", () => {
+  const group = activeGroup();
+  if (!group) return;
+  const ok = window.confirm(`Clear match history for ${group.name}? Players, teams, and groups will stay.`);
+  if (!ok) return;
+  state.data.matches = state.data.matches.filter((match) => match.groupId !== group.id);
+  saveData();
+  render();
+});
+
 document.querySelectorAll(".filter").forEach((button) => {
   button.addEventListener("click", () => {
     state.leaderboardFilter = button.dataset.filter;
